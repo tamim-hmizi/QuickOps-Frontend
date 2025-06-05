@@ -1,3 +1,4 @@
+// [Unchanged imports]
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -14,12 +15,13 @@ import {
   FaTimesCircle,
   FaArrowLeft,
   FaTrash,
+  FaNetworkWired,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { deploy } from "../services/deployService";
 import BuildStatusModal from "../components/BuildStatusModal";
 
-const ProjectDetail = ({ onDelete }) => {
+const ProjectDetail = ({ onDelete, refreshProjects }) => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [showModal, setShowModal] = useState(false);
@@ -48,6 +50,12 @@ const ProjectDetail = ({ onDelete }) => {
     fetchProject();
   }, [id]);
 
+  const refreshProject = async () => {
+    const updated = await getProjectById(id);
+    setProject(updated.project);
+    setSelectedDeployment(updated.project.deploymentChoice || "");
+  };
+
   const handleDeploymentUpdate = async () => {
     if (!selectedDeployment || !project) return;
 
@@ -60,6 +68,9 @@ const ProjectDetail = ({ onDelete }) => {
       setModalData(result);
       setShowModal(true);
       toast.success("Deployment started successfully!");
+      await new Promise((resolve) => setTimeout(resolve, 15000));
+      await refreshProject();
+      if (refreshProjects) refreshProjects();
     } catch (err) {
       console.error("Error during deployment:", err);
       toast.error("Failed to start deployment");
@@ -82,7 +93,7 @@ const ProjectDetail = ({ onDelete }) => {
       setIsDeleting(true);
       await deleteProject(project._id);
       toast.success("Project deleted successfully!");
-      onDelete && onDelete(project._id); // <- Notify App
+      onDelete && onDelete(project._id);
       navigate("/");
     } catch (error) {
       console.error("Error deleting project:", error);
@@ -160,29 +171,26 @@ const ProjectDetail = ({ onDelete }) => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
-        <Link to="/" className="btn btn-ghost gap-2">
+        <Link to="/" className="btn btn-ghost gap-2" disabled={submitting}>
           <FaArrowLeft /> Back to Projects
         </Link>
       </div>
 
       <div className="max-w-6xl mx-auto bg-base-100 rounded-box shadow-lg overflow-hidden">
-        {/* Header */}
         <div className="bg-primary text-primary-content p-6 relative">
-          {/* Delete button */}
-          {project.status === "not deployed" && (
+          {project.status !== "deployed" && (
             <button
               onClick={handleDelete}
               className={`btn btn-ghost btn-sm absolute top-4 right-4 ${
                 isDeleting ? "loading" : "opacity-60 hover:opacity-100"
               }`}
-              disabled={isDeleting}
+              disabled={isDeleting || submitting}
               aria-label="Delete project"
             >
               {!isDeleting && <FaTrash className="text-error" />}
             </button>
           )}
 
-          {/* Title & badges */}
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl md:text-4xl font-bold">{project.name}</h1>
             <div className="flex flex-wrap items-center gap-2">
@@ -196,9 +204,7 @@ const ProjectDetail = ({ onDelete }) => {
           </div>
         </div>
 
-        {/* Body */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 p-6">
-          {/* Left Column */}
           <div className="space-y-6">
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body">
@@ -236,63 +242,95 @@ const ProjectDetail = ({ onDelete }) => {
             </div>
           </div>
 
-          {/* Right Column */}
           <div className="space-y-6">
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body">
                 <h2 className="card-title text-xl flex items-center gap-2">
                   <FaRocket className="text-primary" />
-                  Deployment Choice
+                  Deployment Details
                 </h2>
 
-                <div className="mt-4 space-y-2">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="deployment"
-                      value="VM"
-                      checked={selectedDeployment === "VM"}
-                      onChange={(e) => setSelectedDeployment(e.target.value)}
-                      className="radio radio-primary"
-                    />
-                    <span>VM</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="deployment"
-                      value="Kubernetes"
-                      checked={selectedDeployment === "Kubernetes"}
-                      onChange={(e) => setSelectedDeployment(e.target.value)}
-                      className="radio radio-primary"
-                    />
-                    <span>Kubernetes</span>
-                  </label>
+                {project.status !== "deployed" ? (
+                  <div className="mt-4 space-y-2">
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="deployment"
+                        value="VM"
+                        checked={selectedDeployment === "VM"}
+                        onChange={(e) => setSelectedDeployment(e.target.value)}
+                        className="radio radio-primary"
+                        disabled={submitting}
+                      />
+                      <span>VM</span>
+                    </label>
+                    <label className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="deployment"
+                        value="Kubernetes"
+                        checked={selectedDeployment === "Kubernetes"}
+                        onChange={(e) => setSelectedDeployment(e.target.value)}
+                        className="radio radio-primary"
+                        disabled={submitting}
+                      />
+                      <span>Kubernetes</span>
+                    </label>
+                  </div>
+                ) : (
+                  <>
+                    <p className="mt-2 text-sm text-gray-600">
+                      Deployment type:{" "}
+                      <strong>{project.deploymentChoice}</strong>
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      <FaNetworkWired className="inline mr-1 text-primary" />
+                      Public IP: <strong>{project.publicIp}</strong>
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      🌐 DNS:{" "}
+                      <a
+                        href={`http://${project.dnsLabel}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="link link-primary hover:underline"
+                      >
+                        {project.dnsLabel}
+                      </a>
+                    </p>
+                  </>
+                )}
 
-                  <button
-                    className="btn btn-primary mt-4 w-full flex items-center justify-center"
-                    onClick={handleDeploymentUpdate}
-                    disabled={submitting}
-                  >
-                    {submitting ? (
-                      <>
-                        <FaSpinner className="animate-spin mr-2" />
-                        Updating...
-                      </>
-                    ) : (
-                      "Deploy"
-                    )}
-                  </button>
-                  {showModal && modalData && (
-                    <BuildStatusModal
-                      stages={modalData.stages}
-                      status={modalData.status}
-                      jobName={project.name}
-                      buildId={modalData.buildId}
-                      onClose={() => setShowModal(false)}
-                    />
+                <button
+                  className={`btn mt-4 w-full ${
+                    project.status === "deployed" ? "btn-accent" : "btn-primary"
+                  }`}
+                  onClick={handleDeploymentUpdate}
+                  disabled={submitting}
+                >
+                  {submitting ? (
+                    <>
+                      <FaSpinner className="animate-spin mr-2" />
+                      {project.status === "deployed"
+                        ? "Updating..."
+                        : "Deploying..."}
+                    </>
+                  ) : project.status === "deployed" ? (
+                    "Update"
+                  ) : (
+                    "Deploy"
                   )}
-                </div>
+                </button>
+
+                {showModal && modalData && (
+                  <BuildStatusModal
+                    stages={modalData.stages}
+                    status={modalData.status}
+                    jobName={project.name}
+                    buildId={modalData.buildId}
+                    onClose={() => setShowModal(false)}
+                  />
+                )}
               </div>
             </div>
           </div>

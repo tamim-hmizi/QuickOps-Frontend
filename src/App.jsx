@@ -11,6 +11,21 @@ function App() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  const fetchProjects = async () => {
+    try {
+      const projectsData = await getAllProjects();
+      setProjects(projectsData.projects);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchProjects();
+  }, []);
+
   const handleAddProject = (newProject) => {
     setProjects((prevProjects) => [...prevProjects, newProject]);
   };
@@ -20,21 +35,6 @@ function App() {
       prevProjects.filter((p) => p._id !== deletedId)
     );
   };
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const projectsData = await getAllProjects();
-        setProjects(projectsData.projects);
-      } catch (error) {
-        console.error("Error fetching projects:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProjects();
-  }, []);
 
   return (
     <Router>
@@ -104,7 +104,12 @@ function App() {
                   />
                   <Route
                     path="/project/:id"
-                    element={<ProjectDetail onDelete={handleDeleteProject} />}
+                    element={
+                      <ProjectDetail
+                        onDelete={handleDeleteProject}
+                        refreshProjects={fetchProjects}
+                      />
+                    }
                   />
                 </Routes>
               </div>
