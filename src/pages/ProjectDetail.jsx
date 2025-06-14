@@ -1,4 +1,3 @@
-// [Unchanged imports]
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
@@ -16,6 +15,7 @@ import {
   FaArrowLeft,
   FaTrash,
   FaNetworkWired,
+  FaChartLine,
 } from "react-icons/fa";
 import { toast } from "react-hot-toast";
 import { deploy } from "../services/deployService";
@@ -32,6 +32,7 @@ const ProjectDetail = ({ onDelete, refreshProjects }) => {
   const [isDeleting, setIsDeleting] = useState(false);
   const [error, setError] = useState(null);
   const [selectedDeployment, setSelectedDeployment] = useState("");
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -76,6 +77,42 @@ const ProjectDetail = ({ onDelete, refreshProjects }) => {
       toast.error("Failed to start deployment");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const handleAnalyze = async () => {
+    setIsAnalyzing(true);
+    try {
+      const res = await fetch("http://quickops.dc2.cloudapp.xpressazure.com:8001/suggest", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          frontend: project.frontendRepo,
+          backends: project.backendRepos,
+          token: project.githubToken,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("AI analysis failed");
+      }
+
+      const data = await res.json();
+
+      await updateProject(project._id, {
+        recommendation: data.recommendation,
+        reasoning: data.reasoning,
+      });
+
+      toast.success("AI analysis completed and updated!");
+      await refreshProject();
+    } catch (err) {
+      console.error("Error during AI analysis:", err);
+      toast.error("AI analysis failed");
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
@@ -243,6 +280,41 @@ const ProjectDetail = ({ onDelete, refreshProjects }) => {
           </div>
 
           <div className="space-y-6">
+            {/* Analysis Section */}
+            <div className="card bg-base-200 shadow-sm">
+              <div className="card-body">
+                <h2 className="card-title text-xl flex items-center gap-2">
+                  <FaChartLine className="text-primary" />
+                  Project Analyses
+                </h2>
+                {project.recommendation && (
+                  <div className="mt-4">
+                    <h3 className="font-bold text-md">Recommendation:</h3>
+                    <p className="text-lg text-primary">{project.recommendation}</p>
+                    <h4 className="font-bold text-md mt-2">Reasoning:</h4>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {project.reasoning}
+                    </p>
+                  </div>
+                )}
+                <button
+                  className="btn btn-secondary mt-4 w-full"
+                  onClick={handleAnalyze}
+                  disabled={isAnalyzing}
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <FaSpinner className="animate-spin mr-2" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    "Analyze"
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* Deployment Section */}
             <div className="card bg-base-200 shadow-sm">
               <div className="card-body">
                 <h2 className="card-title text-xl flex items-center gap-2">

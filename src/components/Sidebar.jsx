@@ -1,13 +1,16 @@
 import { Link } from "react-router-dom";
-import { FaBars, FaPlus } from "react-icons/fa";
+import { FaPlus, FaSignOutAlt } from "react-icons/fa";
 import ProjectList from "./ProjectList";
+import { useDispatch } from "react-redux";
+import { logout } from "../slices/authSlice";
 
-const Sidebar = ({
-  projects,
-  loading,
-  handleAddProject,
-  variant = "compact",
-}) => {
+const Sidebar = ({ projects, loading, handleAddProject, variant = "compact" }) => {
+  const dispatch = useDispatch();
+
+  const handleLogout = () => {
+    dispatch(logout());
+  };
+
   return (
     <div className="menu p-4 w-80 h-full bg-base-100 text-base-content border-r border-base-300">
       <div className="p-4">
@@ -43,8 +46,11 @@ const Sidebar = ({
         />
       </div>
 
-      <div className="p-4 border-t border-base-300 text-xs text-base-content/70">
-        © {new Date().getFullYear()} QuickOps. All rights reserved.
+      <div className="p-4 border-t border-base-300 text-xs text-base-content/70 flex flex-col gap-3">
+        <button onClick={handleLogout} className="btn btn-outline btn-error w-full gap-2">
+          <FaSignOutAlt /> Logout
+        </button>
+        <span>© {new Date().getFullYear()} QuickOps. All rights reserved.</span>
       </div>
     </div>
   );

@@ -83,6 +83,7 @@ const Form = ({ handleAddProject }) => {
                 onChange={handleNameChange}
                 className="input input-bordered input-primary w-full"
                 required
+                maxLength={12}
                 placeholder="My Awesome Project"
               />
             </div>
