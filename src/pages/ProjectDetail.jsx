@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
+import { AI_URL } from "../config/endpoints";
 import {
   getProjectById,
   updateProject,
@@ -83,7 +84,7 @@ const ProjectDetail = ({ onDelete, refreshProjects }) => {
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     try {
-      const res = await fetch("http://quickops.dc2.cloudapp.xpressazure.com:8001/suggest", {
+      const res = await fetch(`${AI_URL}/suggest`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

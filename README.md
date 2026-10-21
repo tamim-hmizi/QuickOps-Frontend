@@ -26,6 +26,21 @@ The frontend talks to two services:
 
 The backend then drives Jenkins, SonarQube, Nexus, Terraform, Ansible, Prometheus and Grafana, hosted on the platform VM provisioned by QuickOps-IAC and configured by QuickOps-CAC.
 
+## Configuration
+
+Copy `.env.example` to `.env`. Vite reads these at build time:
+
+| Variable | Default | Description |
+|---|---|---|
+| `VITE_API_URL` | `http://localhost:5000/api` | QuickOps-Backend API |
+| `VITE_AI_URL` | `http://localhost:8001` | QuickOps-AI service |
+
+## Tests
+
+```bash
+npm test
+```
+
 ## Related repositories
 
 | Repository | Role |
