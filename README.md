@@ -69,4 +69,4 @@ Service URLs are currently set in code: `baseURL` in `src/services/api.js` (back
 
 ## Project context
 
-RFC final year project, 2025, by Tamim Hmizi — https://tamim-hmizi.github.io/Portfolio/
+RFC final year project, 2025, by Tamim Hmizi: https://tamim-hmizi.github.io/Portfolio/
