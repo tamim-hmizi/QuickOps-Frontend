@@ -33,7 +33,10 @@ Copy `.env.example` to `.env`. Vite reads these at build time:
 | Variable | Default | Description |
 |---|---|---|
 | `VITE_API_URL` | `http://localhost:5000/api` | QuickOps-Backend API |
-| `VITE_AI_URL` | `http://localhost:8001` | QuickOps-AI service |
+
+## Authentication
+
+Login stores the JWT returned by QuickOps-Backend with the user, and `src/services/api.js` sends it as a Bearer token on every request. A 401 response logs the user out. AI analysis goes through the backend (`POST /api/projects/:id/analyze`), so GitHub tokens never reach the browser.
 
 ## Tests
 

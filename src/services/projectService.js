@@ -50,7 +50,14 @@ const deleteProject = async (id) => {
   }
 };
 
+// The backend calls QuickOps-AI with the stored GitHub token and saves the result.
+const analyzeProject = async (id) => {
+  const response = await api.post(`/projects/${id}/analyze`);
+  return response.data;
+};
+
 export {
+  analyzeProject,
   createProject,
   updateProject,
   getAllProjects,

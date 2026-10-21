@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
-import { AI_URL } from "../config/endpoints";
 import {
+  analyzeProject,
   getProjectById,
   updateProject,
   deleteProject,
@@ -84,29 +84,7 @@ const ProjectDetail = ({ onDelete, refreshProjects }) => {
   const handleAnalyze = async () => {
     setIsAnalyzing(true);
     try {
-      const res = await fetch(`${AI_URL}/suggest`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          frontend: project.frontendRepo,
-          backends: project.backendRepos,
-          token: project.githubToken,
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error("AI analysis failed");
-      }
-
-      const data = await res.json();
-
-      await updateProject(project._id, {
-        recommendation: data.recommendation,
-        reasoning: data.reasoning,
-      });
-
+      await analyzeProject(project._id);
       toast.success("AI analysis completed and updated!");
       await refreshProject();
     } catch (err) {
