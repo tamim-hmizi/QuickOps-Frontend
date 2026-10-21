@@ -14,24 +14,30 @@ import { logout } from "./slices/authSlice";
 function App() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [refreshKey, setRefreshKey] = useState(0);
   const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
 
-  const fetchProjects = async () => {
-    try {
-      const projectsData = await getAllProjects();
-      setProjects(projectsData.projects);
-    } catch (error) {
-      console.error("Error fetching projects:", error);
-      if (error.response?.status === 401) dispatch(logout());
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    if (user) fetchProjects();
-  }, [user]);
+    if (!user) return;
+    let cancelled = false;
+    getAllProjects()
+      .then((projectsData) => {
+        if (!cancelled) setProjects(projectsData.projects);
+      })
+      .catch((error) => {
+        console.error("Error fetching projects:", error);
+        if (error.response?.status === 401) dispatch(logout());
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user, dispatch, refreshKey]);
+
+  const fetchProjects = () => setRefreshKey((key) => key + 1);
 
   const handleAddProject = (newProject) =>
     setProjects((prev) => [...prev, newProject]);
