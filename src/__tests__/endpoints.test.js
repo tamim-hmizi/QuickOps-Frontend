@@ -5,22 +5,16 @@ const load = async () => {
   return import("../config/endpoints");
 };
 
-describe("service endpoints", () => {
+describe("API endpoint", () => {
   afterEach(() => vi.unstubAllEnvs());
 
-  it("defaults to local services", async () => {
+  it("defaults to the local backend", async () => {
     vi.stubEnv("VITE_API_URL", "");
-    vi.stubEnv("VITE_AI_URL", "");
-    const { API_URL, AI_URL } = await load();
-    expect(API_URL).toBe("http://localhost:5000/api");
-    expect(AI_URL).toBe("http://localhost:8001");
+    expect((await load()).API_URL).toBe("http://localhost:5000/api");
   });
 
   it("uses the build environment and drops trailing slashes", async () => {
     vi.stubEnv("VITE_API_URL", "https://api.example.com/api/");
-    vi.stubEnv("VITE_AI_URL", "https://ai.example.com//");
-    const { API_URL, AI_URL } = await load();
-    expect(API_URL).toBe("https://api.example.com/api");
-    expect(AI_URL).toBe("https://ai.example.com");
+    expect((await load()).API_URL).toBe("https://api.example.com/api");
   });
 });
